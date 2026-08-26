@@ -16,8 +16,12 @@ public class KafkaTopicConfig {
 
     @Value("${spring.kafka.bootstrap-servers:localhost:9092}")
     private String bootstrapServers;
-    @Value("${kafka.topic.events}")
-    private String eventTopic;
+    @Value("${kafka.topic.email}")
+    private String emailTopic;
+    @Value("${kafka.topic.discord}")
+    private String discordTopic;
+    @Value("${kafka.topic.slack}")
+    private String slackTopic;
 
     @Bean
     public KafkaAdmin kafkaAdmin() {
@@ -27,8 +31,22 @@ public class KafkaTopicConfig {
     }
 
     @Bean
-    public NewTopic notificationsTopic() {
-        return TopicBuilder.name(eventTopic)
+    public NewTopic emailTopic() {
+        return TopicBuilder.name(emailTopic)
+                .partitions(3)
+                .replicas(1)
+                .build();
+    }
+    @Bean
+    public NewTopic discordTopic() {
+        return TopicBuilder.name(discordTopic)
+                .partitions(3)
+                .replicas(1)
+                .build();
+    }
+    @Bean
+    public NewTopic slackTopic() {
+        return TopicBuilder.name(slackTopic)
                 .partitions(3)
                 .replicas(1)
                 .build();

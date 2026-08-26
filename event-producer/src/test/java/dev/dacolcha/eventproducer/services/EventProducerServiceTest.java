@@ -15,7 +15,7 @@ import static org.mockito.Mockito.verify;
 
 import static org.mockito.ArgumentMatchers.eq;
 
-class EventProducerTest {
+class EventProducerServiceTest {
 
     @Mock
     private KafkaTemplate<String, String> kafkaTemplate;
@@ -23,20 +23,11 @@ class EventProducerTest {
     @InjectMocks
     private EventProducerService eventProducerService;
 
-    private final String eventTopic = "event-notification";
     private ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-
-        try {
-            java.lang.reflect.Field topicField = EventProducerService.class.getDeclaredField("eventTopic");
-            topicField.setAccessible(true);
-            topicField.set(eventProducerService, eventTopic);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Test
@@ -49,7 +40,8 @@ class EventProducerTest {
         );
 
         String message = objectMapper.writeValueAsString(notificationEventDto);
+        String destinationTopic = notificationEventDto.eventType().toString().toLowerCase() + ".notification";
         eventProducerService.sendMessage(notificationEventDto);
-        verify(kafkaTemplate).send(eq(eventTopic), eq(notificationEventDto.eventType().toString()),  eq(message));
+        verify(kafkaTemplate).send(eq(destinationTopic), eq(notificationEventDto.eventId().toString()),  eq(message));
     }
 }
