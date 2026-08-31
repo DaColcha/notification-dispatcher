@@ -1,4 +1,4 @@
-package dev.dacolcha.emailconsumer.dto;
+package dev.dacolcha.common.dto;
 
 public enum EventType {
         EMAIL,

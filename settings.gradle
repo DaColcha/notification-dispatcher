@@ -1,0 +1,8 @@
+rootProject.name = 'notification-dispatcher'
+
+include 'common'
+include 'event-producer'
+include 'email-consumer'
+include 'discord-consumer'
+include 'slack-consumer'
+include 'ws-gateway'

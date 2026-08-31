@@ -1,0 +1,27 @@
+plugins {
+    id 'java'
+    id 'java-library'
+}
+
+group = 'dev.dacolcha'
+version = '0.0.1-SNAPSHOT'
+description = 'common'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation 'jakarta.validation:jakarta.validation-api'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
