@@ -1,23 +1,20 @@
 package dev.dacolcha.eventproducer.controllers;
 
-import dev.dacolcha.eventproducer.dto.NotificationEventDto;
+import dev.dacolcha.common.dto.NotificationEvent;
 import dev.dacolcha.eventproducer.services.EventProducerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import tools.jackson.databind.ObjectMapper;
 
 @RestController
 @RequestMapping("/event")
+@CrossOrigin(origins = "http://localhost:5173", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.OPTIONS})
 public class EventProducerController {
 
     @Autowired
     private EventProducerService eventProducerService;
 
-    @Autowired
-    private ObjectMapper objectMapper;
-
     @PostMapping
-    public String publishEvent(@RequestBody NotificationEventDto event) {
+    public String publishEvent(@RequestBody NotificationEvent event) {
         eventProducerService.sendMessage(event);
         return "Event published";
     }

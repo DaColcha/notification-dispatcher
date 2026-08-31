@@ -1,9 +1,8 @@
 package dev.dacolcha.eventproducer.controllers;
 
-import dev.dacolcha.eventproducer.dto.EventType;
-import dev.dacolcha.eventproducer.dto.NotificationEventDto;
+import dev.dacolcha.common.dto.EventType;
+import dev.dacolcha.common.dto.NotificationEvent;
 import dev.dacolcha.eventproducer.services.EventProducerService;
-import jdk.jfr.ContentType;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +33,7 @@ public class EventProducerControllerTest {
 
     @Test
     void createOrder_shouldReturnOrderCreatedAndSendKafkaMessage() throws Exception {
-        NotificationEventDto notificationEventDto = new NotificationEventDto(
+        NotificationEvent notificationEventDto = new NotificationEvent(
                 UUID.randomUUID(),
                 EventType.EMAIL,
                 "da.colcha@gmail.com",
@@ -47,6 +46,6 @@ public class EventProducerControllerTest {
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.content().string(Matchers.containsString("Event published")));
 
-        verify(eventProducerService, times(1)).sendMessage(any(NotificationEventDto.class));
+        verify(eventProducerService, times(1)).sendMessage(any(NotificationEvent.class));
     }
 }
