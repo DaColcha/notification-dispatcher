@@ -1,6 +1,7 @@
 package dev.dacolcha.discordconsumer.service;
 
-import dev.dacolcha.discordconsumer.dto.NotificationEvent;
+import dev.dacolcha.common.dto.NotificationEvent;
+import dev.dacolcha.common.dto.NotificationStatus;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
-import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 import java.util.Map;
@@ -23,10 +23,12 @@ public class DiscordConsumerService {
     @Autowired
     private DiscordWebhookSender webhookSender;
 
-    @KafkaListener(topics = "${kafka.topic.discord}")
-    public void consumeDiscord(String message) {
+    @Autowired
+    private StatusProducer statusProducer;
 
-        NotificationEvent event = new ObjectMapper().readValue(message, NotificationEvent.class);
+    @KafkaListener(topics = "${kafka.topic.discord}")
+    public void consumeDiscord(NotificationEvent event) {
+
         log.info("💬 [DiscordConsumer] Consumiendo evento [{}] para Discord", event.eventId());
 
         try {
@@ -39,11 +41,19 @@ public class DiscordConsumerService {
             webhookSender.send(webhookUrl, discordPayload);
 
             log.info("✅ [DiscordConsumer] Evento [{}] enviado con éxito a Discord", event.eventId());
-
+            statusProducer.publishStatus(
+                    event.eventId(),
+                    NotificationStatus.SUCCESS,
+                    "Mensaje entregado con éxito al canal Discord"
+            );
 
         } catch (Exception e) {
             log.error("❌ [DiscordConsumer] Fallo al enviar notificación a Discord", e);
-            throw e;
+            statusProducer.publishStatus(
+                    event.eventId(),
+                    NotificationStatus.FAILED,
+                    "Fallo al entregar mensaje a Discord: " + e.getMessage()
+            );
         }
     }
 

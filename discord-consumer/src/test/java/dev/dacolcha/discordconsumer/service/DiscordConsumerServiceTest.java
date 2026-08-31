@@ -1,13 +1,17 @@
 package dev.dacolcha.discordconsumer.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.dacolcha.discordconsumer.dto.EventType;
-import dev.dacolcha.discordconsumer.dto.NotificationEvent;
+import dev.dacolcha.common.dto.EventType;
+import dev.dacolcha.common.dto.NotificationEvent;
+import dev.dacolcha.common.dto.NotificationStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
@@ -16,15 +20,20 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class DiscordConsumerServiceTest {
 
     private static final String FALLBACK_WEBHOOK = "https://discord.com/api/webhooks/fallback-token";
-    private static final ObjectMapper MAPPER = new ObjectMapper();
 
+    @Mock
     private DiscordWebhookSender webhookSender;
+
+    @Mock
+    private StatusProducer statusProducerMock;
 
     private DiscordConsumerService discordConsumerService;
 
@@ -32,10 +41,9 @@ class DiscordConsumerServiceTest {
     void setUp() {
         discordConsumerService = new DiscordConsumerService();
 
-        webhookSender = Mockito.mock(DiscordWebhookSender.class);
-
         ReflectionTestUtils.setField(discordConsumerService, "webhookSender", webhookSender);
         ReflectionTestUtils.setField(discordConsumerService, "fallbackWebhookUrl", FALLBACK_WEBHOOK);
+        ReflectionTestUtils.setField(discordConsumerService, "statusProducer", statusProducerMock);
     }
 
 
@@ -49,7 +57,7 @@ class DiscordConsumerServiceTest {
                 "Service X deployed"
         );
 
-        discordConsumerService.consumeDiscord(MAPPER.writeValueAsString(event));
+        discordConsumerService.consumeDiscord(event);
 
         ArgumentCaptor<String> uriCaptor = ArgumentCaptor.forClass(String.class);
 
@@ -77,12 +85,19 @@ class DiscordConsumerServiceTest {
                 "Deploy failed"
         );
 
-        discordConsumerService.consumeDiscord(MAPPER.writeValueAsString(event));
+        discordConsumerService.consumeDiscord(event);
 
         ArgumentCaptor<String> uriCaptor = ArgumentCaptor.forClass(String.class);
         verify(webhookSender).send(uriCaptor.capture(), ArgumentMatchers.any(Map.class));
 
         assertThat(uriCaptor.getValue()).isEqualTo(perEventWebhook);
+
+        verify(statusProducerMock, times(1))
+                .publishStatus(
+                        eq(event.eventId()),
+                        eq(NotificationStatus.SUCCESS),
+                        contains("entregado")
+                );
     }
 
     @Test
@@ -98,7 +113,13 @@ class DiscordConsumerServiceTest {
                 "this will fail to send"
         );
 
-        assertThatThrownBy(() -> discordConsumerService.consumeDiscord(MAPPER.writeValueAsString(event)))
-                .isInstanceOf(RuntimeException.class);
+        discordConsumerService.consumeDiscord(event);
+
+        verify(statusProducerMock, times(1))
+                .publishStatus(
+                        eq(event.eventId()),
+                        eq(NotificationStatus.FAILED),
+                        contains("Fallo")
+                );
     }
 }

@@ -1,6 +1,7 @@
 package dev.dacolcha.slackconsumer.service;
 
-import dev.dacolcha.slackconsumer.dto.NotificationEvent;
+import dev.dacolcha.common.dto.NotificationEvent;
+import dev.dacolcha.common.dto.NotificationStatus;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
-import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 import java.util.Map;
@@ -23,10 +23,11 @@ public class SlackConsumerService {
     @Autowired
     private SlackSender slackSender;
 
-    @KafkaListener(topics = "${kafka.topic.slack}")
-    public void consumeSlack(String message) {
+    @Autowired
+    private StatusProducer statusProducer;
 
-        NotificationEvent event = new ObjectMapper().readValue(message, NotificationEvent.class);
+    @KafkaListener(topics = "${kafka.topic.slack}")
+    public void consumeSlack(NotificationEvent event) {
         log.info("💬 [SlackConsumer] Consumiendo evento [{}] para Slack", event.eventId());
 
         try {
@@ -40,10 +41,18 @@ public class SlackConsumerService {
 
             log.info("✅ [SlackConsumer] Evento [{}] enviado con éxito a Slack", event.eventId());
 
-
+            statusProducer.publishStatus(
+                    event.eventId(),
+                    NotificationStatus.SUCCESS,
+                    "Mensaje entregado con éxito al canal Slack"
+            );
         } catch (Exception e) {
             log.error("❌ [SlackConsumer] Fallo al enviar notificación a Slack", e);
-            throw e;
+            statusProducer.publishStatus(
+                    event.eventId(),
+                    NotificationStatus.FAILED,
+                    "Fallo al entregar a Slack: " + e.getMessage()
+            );
         }
     }
 

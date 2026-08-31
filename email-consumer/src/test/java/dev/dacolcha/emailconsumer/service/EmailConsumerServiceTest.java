@@ -67,9 +67,7 @@ public class EmailConsumerServiceTest {
                 "Random event notification"
         );
 
-        String message = objectMapper.writeValueAsString(notificationEvent);
-
-        emailConsumerService.consumeEvent(message);
+        emailConsumerService.consumeEvent(notificationEvent);
 
         ArgumentCaptor<CreateEmailOptions> optionsCaptor = ArgumentCaptor.forClass(CreateEmailOptions.class);
         verify(emailsMock, times(1)).send(optionsCaptor.capture());
@@ -101,9 +99,7 @@ public class EmailConsumerServiceTest {
                 "Random event notification"
         );
 
-        String message = objectMapper.writeValueAsString(notificationEvent);
-
-        emailConsumerService.consumeEvent(message);
+        emailConsumerService.consumeEvent(notificationEvent);
 
         verify(emailsMock, times(1)).send(ArgumentMatchers.any(CreateEmailOptions.class));
         verify(statusProducerMock, times(1))

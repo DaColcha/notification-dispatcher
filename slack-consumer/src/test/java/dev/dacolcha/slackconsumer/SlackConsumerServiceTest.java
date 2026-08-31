@@ -1,14 +1,21 @@
 package dev.dacolcha.slackconsumer;
 
-import dev.dacolcha.slackconsumer.dto.EventType;
-import dev.dacolcha.slackconsumer.dto.NotificationEvent;
+import dev.dacolcha.common.dto.EventType;
+import dev.dacolcha.common.dto.NotificationEvent;
+import dev.dacolcha.common.dto.NotificationStatus;
 import dev.dacolcha.slackconsumer.service.SlackConsumerService;
 import dev.dacolcha.slackconsumer.service.SlackSender;
+import dev.dacolcha.slackconsumer.service.StatusProducer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import tools.jackson.databind.ObjectMapper;
 
@@ -18,14 +25,17 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 public class SlackConsumerServiceTest {
     private static final String FALLBACK_WEBHOOK = "https://hooks.slack.com/api/webhooks/fallback-token";
-    private static final ObjectMapper MAPPER = new ObjectMapper();
 
+    @Mock
     private SlackSender slackSender;
+
+    @Mock
+    private StatusProducer statusProducerMock;
 
     private SlackConsumerService slackConsumerService;
 
@@ -33,10 +43,9 @@ public class SlackConsumerServiceTest {
     void setUp() {
         slackConsumerService = new SlackConsumerService();
 
-        slackSender = Mockito.mock(SlackSender.class);
-
         ReflectionTestUtils.setField(slackConsumerService, "slackSender", slackSender);
         ReflectionTestUtils.setField(slackConsumerService, "fallbackWebhookUrl", FALLBACK_WEBHOOK);
+        ReflectionTestUtils.setField(slackConsumerService, "statusProducer", statusProducerMock);
     }
 
 
@@ -50,7 +59,7 @@ public class SlackConsumerServiceTest {
                 "Service X deployed"
         );
 
-        slackConsumerService.consumeSlack(MAPPER.writeValueAsString(event));
+        slackConsumerService.consumeSlack(event);
 
         ArgumentCaptor<String> uriCaptor = ArgumentCaptor.forClass(String.class);
 
@@ -64,6 +73,12 @@ public class SlackConsumerServiceTest {
         assertThat(blocks).hasSize(2);
         Map<String, Object> content = (Map<String, Object>) blocks.get(1).get("text");
         assertThat(content.get("text")).isEqualTo(event.message());
+        verify(statusProducerMock, times(1))
+                .publishStatus(
+                        eq(event.eventId()),
+                        eq(NotificationStatus.SUCCESS),
+                        contains("entregado")
+                );
     }
 
     @Test
@@ -76,12 +91,18 @@ public class SlackConsumerServiceTest {
                 "Deploy failed"
         );
 
-        slackConsumerService.consumeSlack(MAPPER.writeValueAsString(event));
+        slackConsumerService.consumeSlack(event);
 
         ArgumentCaptor<String> uriCaptor = ArgumentCaptor.forClass(String.class);
         verify(slackSender).send(uriCaptor.capture(), ArgumentMatchers.any(Map.class));
 
         assertThat(uriCaptor.getValue()).isEqualTo(perEventWebhook);
+        verify(statusProducerMock, times(1))
+                .publishStatus(
+                        eq(event.eventId()),
+                        eq(NotificationStatus.SUCCESS),
+                        contains("entregado")
+                );
     }
 
     @Test
@@ -92,12 +113,18 @@ public class SlackConsumerServiceTest {
 
         NotificationEvent event = new NotificationEvent(
                 UUID.randomUUID(),
-                EventType.DISCORD,
+                EventType.SLACK,
                 null,
                 "this will fail to send"
         );
 
-        assertThatThrownBy(() -> slackConsumerService.consumeSlack(MAPPER.writeValueAsString(event)))
-                .isInstanceOf(RuntimeException.class);
+        slackConsumerService.consumeSlack(event);
+
+        verify(statusProducerMock, times(1))
+                .publishStatus(
+                        eq(event.eventId()),
+                        eq(NotificationStatus.FAILED),
+                        contains("Fallo")
+                );
     }
 }
