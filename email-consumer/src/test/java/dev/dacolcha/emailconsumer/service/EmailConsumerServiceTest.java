@@ -31,6 +31,7 @@ import static org.mockito.Mockito.when;
 public class EmailConsumerServiceTest {
 
     private static final String FROM_EMAIL = "notifications@dispatcher.test";
+    private static final int PARTITION = 0;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private MockedConstruction<Resend> resendConstruction;
@@ -67,7 +68,7 @@ public class EmailConsumerServiceTest {
                 "Random event notification"
         );
 
-        emailConsumerService.consumeEvent(notificationEvent);
+        emailConsumerService.consumeEvent(notificationEvent, PARTITION);
 
         ArgumentCaptor<CreateEmailOptions> optionsCaptor = ArgumentCaptor.forClass(CreateEmailOptions.class);
         verify(emailsMock, times(1)).send(optionsCaptor.capture());
@@ -83,7 +84,8 @@ public class EmailConsumerServiceTest {
                 .publishStatus(
                         eq(notificationEvent.eventId()),
                         eq(NotificationStatus.SUCCESS),
-                        contains("entregado")
+                        contains("event"),
+                        eq(PARTITION)
                 );
     }
 
@@ -99,14 +101,15 @@ public class EmailConsumerServiceTest {
                 "Random event notification"
         );
 
-        emailConsumerService.consumeEvent(notificationEvent);
+        emailConsumerService.consumeEvent(notificationEvent, PARTITION);
 
         verify(emailsMock, times(1)).send(ArgumentMatchers.any(CreateEmailOptions.class));
         verify(statusProducerMock, times(1))
                 .publishStatus(
                         eq(notificationEvent.eventId()),
                         eq(NotificationStatus.FAILED),
-                        contains("Fallo")
+                        contains("Fallo"),
+                        eq(PARTITION)
                 );
     }
 }

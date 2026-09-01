@@ -8,6 +8,7 @@ public record NotificationResult(
         NotificationStatus status,
         EventType eventType,
         String detail,
+        int partition,
         Long timestamp
 ) implements Serializable {
 }

@@ -9,6 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -33,7 +35,8 @@ public class EmailConsumerService {
     }
 
     @KafkaListener(topics = "${kafka.topic.email}")
-    public void consumeEvent(NotificationEvent event) {
+    public void consumeEvent(NotificationEvent event,
+                             @Header(KafkaHeaders.RECEIVED_PARTITION) int partition) {
         log.info("📧 [EmailConsumer] Procesando evento [{}] para {}", event.eventId(), event.destination());
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -53,7 +56,8 @@ public class EmailConsumerService {
             statusProducer.publishStatus(
                     event.eventId(),
                     NotificationStatus.SUCCESS,
-                    "Mensaje entregado con éxito al canal Email"
+                    event.message(),
+                    partition
             );
 
         } catch (Exception e) {
@@ -61,7 +65,8 @@ public class EmailConsumerService {
             statusProducer.publishStatus(
                     event.eventId(),
                     NotificationStatus.FAILED,
-                    "Fallo al entregar a Email: " + e.getMessage()
+                    "Fallo al entregar a Email: " + e.getMessage(),
+                    partition
             );
         }
     }

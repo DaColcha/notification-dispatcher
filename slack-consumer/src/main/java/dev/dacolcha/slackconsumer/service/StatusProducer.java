@@ -24,12 +24,13 @@ public class StatusProducer {
         this.kafkaTemplate = kafkaTemplate;
     }
 
-    public void publishStatus(UUID eventId, NotificationStatus status, String detail) {
+    public void publishStatus(UUID eventId, NotificationStatus status, String detail, int partition) {
         NotificationResult statusEvent = new NotificationResult(
                 eventId,
                 status,
                 EventType.SLACK,
                 detail,
+                partition,
                 System.currentTimeMillis()
         );
 

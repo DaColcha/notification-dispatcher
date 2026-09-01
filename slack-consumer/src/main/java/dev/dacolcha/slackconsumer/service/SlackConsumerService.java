@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -27,7 +29,8 @@ public class SlackConsumerService {
     private StatusProducer statusProducer;
 
     @KafkaListener(topics = "${kafka.topic.slack}")
-    public void consumeSlack(NotificationEvent event) {
+    public void consumeSlack(NotificationEvent event,
+                             @Header(KafkaHeaders.RECEIVED_PARTITION) int partition) {
         log.info("💬 [SlackConsumer] Consumiendo evento [{}] para Slack", event.eventId());
 
         try {
@@ -44,14 +47,16 @@ public class SlackConsumerService {
             statusProducer.publishStatus(
                     event.eventId(),
                     NotificationStatus.SUCCESS,
-                    "Mensaje entregado con éxito al canal Slack"
+                    event.message(),
+                    partition
             );
         } catch (Exception e) {
             log.error("❌ [SlackConsumer] Fallo al enviar notificación a Slack", e);
             statusProducer.publishStatus(
                     event.eventId(),
                     NotificationStatus.FAILED,
-                    "Fallo al entregar a Slack: " + e.getMessage()
+                    "Fallo al entregar a Slack: " + e.getMessage(),
+                    partition
             );
         }
     }

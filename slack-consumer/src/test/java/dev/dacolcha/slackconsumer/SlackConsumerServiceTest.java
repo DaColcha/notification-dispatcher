@@ -12,24 +12,21 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
-import org.mockito.Mockito;
+
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
-import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class SlackConsumerServiceTest {
     private static final String FALLBACK_WEBHOOK = "https://hooks.slack.com/api/webhooks/fallback-token";
+    private static final int PARTITION = 0;
 
     @Mock
     private SlackSender slackSender;
@@ -59,7 +56,7 @@ public class SlackConsumerServiceTest {
                 "Service X deployed"
         );
 
-        slackConsumerService.consumeSlack(event);
+        slackConsumerService.consumeSlack(event,PARTITION);
 
         ArgumentCaptor<String> uriCaptor = ArgumentCaptor.forClass(String.class);
 
@@ -69,15 +66,18 @@ public class SlackConsumerServiceTest {
         assertThat(uriCaptor.getValue()).isEqualTo(FALLBACK_WEBHOOK);
 
         Map<String, Object> payload = payloadCaptor.getValue();
+
         List<Map<String, Object>> blocks = ((List<Map<String, Object>>) payload.get("blocks"));
         assertThat(blocks).hasSize(2);
+
         Map<String, Object> content = (Map<String, Object>) blocks.get(1).get("text");
         assertThat(content.get("text")).isEqualTo(event.message());
         verify(statusProducerMock, times(1))
                 .publishStatus(
                         eq(event.eventId()),
                         eq(NotificationStatus.SUCCESS),
-                        contains("entregado")
+                        contains("deployed"),
+                        eq(PARTITION)
                 );
     }
 
@@ -88,10 +88,10 @@ public class SlackConsumerServiceTest {
                 UUID.fromString("22222222-2222-2222-2222-222222222222"),
                 EventType.SLACK,
                 perEventWebhook,
-                "Deploy failed"
+                "Deploy event"
         );
 
-        slackConsumerService.consumeSlack(event);
+        slackConsumerService.consumeSlack(event, PARTITION);
 
         ArgumentCaptor<String> uriCaptor = ArgumentCaptor.forClass(String.class);
         verify(slackSender).send(uriCaptor.capture(), ArgumentMatchers.any(Map.class));
@@ -101,7 +101,8 @@ public class SlackConsumerServiceTest {
                 .publishStatus(
                         eq(event.eventId()),
                         eq(NotificationStatus.SUCCESS),
-                        contains("entregado")
+                        contains("event"),
+                        eq(PARTITION)
                 );
     }
 
@@ -118,13 +119,14 @@ public class SlackConsumerServiceTest {
                 "this will fail to send"
         );
 
-        slackConsumerService.consumeSlack(event);
+        slackConsumerService.consumeSlack(event, PARTITION);
 
         verify(statusProducerMock, times(1))
                 .publishStatus(
                         eq(event.eventId()),
                         eq(NotificationStatus.FAILED),
-                        contains("Fallo")
+                        contains("Fallo"),
+                        eq(PARTITION)
                 );
     }
 }

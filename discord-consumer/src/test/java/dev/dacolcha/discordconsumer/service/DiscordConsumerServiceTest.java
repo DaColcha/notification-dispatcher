@@ -28,6 +28,7 @@ import static org.mockito.Mockito.*;
 class DiscordConsumerServiceTest {
 
     private static final String FALLBACK_WEBHOOK = "https://discord.com/api/webhooks/fallback-token";
+    private static final int PARTITION = 0;
 
     @Mock
     private DiscordWebhookSender webhookSender;
@@ -57,7 +58,7 @@ class DiscordConsumerServiceTest {
                 "Service X deployed"
         );
 
-        discordConsumerService.consumeDiscord(event);
+        discordConsumerService.consumeDiscord(event, PARTITION);
 
         ArgumentCaptor<String> uriCaptor = ArgumentCaptor.forClass(String.class);
 
@@ -82,10 +83,10 @@ class DiscordConsumerServiceTest {
                 UUID.fromString("22222222-2222-2222-2222-222222222222"),
                 EventType.DISCORD,
                 perEventWebhook,
-                "Deploy failed"
+                "Deploy event"
         );
 
-        discordConsumerService.consumeDiscord(event);
+        discordConsumerService.consumeDiscord(event,PARTITION);
 
         ArgumentCaptor<String> uriCaptor = ArgumentCaptor.forClass(String.class);
         verify(webhookSender).send(uriCaptor.capture(), ArgumentMatchers.any(Map.class));
@@ -96,7 +97,8 @@ class DiscordConsumerServiceTest {
                 .publishStatus(
                         eq(event.eventId()),
                         eq(NotificationStatus.SUCCESS),
-                        contains("entregado")
+                        contains("event"),
+                        eq(PARTITION)
                 );
     }
 
@@ -113,13 +115,14 @@ class DiscordConsumerServiceTest {
                 "this will fail to send"
         );
 
-        discordConsumerService.consumeDiscord(event);
+        discordConsumerService.consumeDiscord(event, PARTITION);
 
         verify(statusProducerMock, times(1))
                 .publishStatus(
                         eq(event.eventId()),
                         eq(NotificationStatus.FAILED),
-                        contains("Fallo")
+                        contains("Fallo"),
+                        eq(PARTITION)
                 );
     }
 }

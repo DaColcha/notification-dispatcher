@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -27,7 +29,8 @@ public class DiscordConsumerService {
     private StatusProducer statusProducer;
 
     @KafkaListener(topics = "${kafka.topic.discord}")
-    public void consumeDiscord(NotificationEvent event) {
+    public void consumeDiscord(NotificationEvent event,
+                               @Header(KafkaHeaders.RECEIVED_PARTITION) int partition) {
 
         log.info("💬 [DiscordConsumer] Consumiendo evento [{}] para Discord", event.eventId());
 
@@ -44,7 +47,8 @@ public class DiscordConsumerService {
             statusProducer.publishStatus(
                     event.eventId(),
                     NotificationStatus.SUCCESS,
-                    "Mensaje entregado con éxito al canal Discord"
+                    event.message(),
+                    partition
             );
 
         } catch (Exception e) {
@@ -52,7 +56,8 @@ public class DiscordConsumerService {
             statusProducer.publishStatus(
                     event.eventId(),
                     NotificationStatus.FAILED,
-                    "Fallo al entregar mensaje a Discord: " + e.getMessage()
+                    "Fallo al entregar mensaje a Discord: " + e.getMessage(),
+                    partition
             );
         }
     }

@@ -42,10 +42,11 @@ public class StatusProducerTest {
                 NotificationStatus.SUCCESS,
                 EventType.EMAIL,
                 "Entregado",
+                0,
                 timestamp
         );
 
-        statusProducer.publishStatus(eventId, NotificationStatus.SUCCESS, "Entregado");
+        statusProducer.publishStatus(eventId, NotificationStatus.SUCCESS, "Entregado", 0);
         verify(kafkaTemplate).send(eq(STATUS_TOPIC),
                 eq(notificationStatus.eventId().toString()),  eq(notificationStatus));
     }
