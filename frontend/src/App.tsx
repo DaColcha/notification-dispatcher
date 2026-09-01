@@ -1,9 +1,21 @@
 import { useNotificationSocket } from './hooks/useNotificationSocket';
 import { NotificationForm } from './components/NotificationForm';
 import { Activity, CheckCircle2, AlertTriangle, XCircle, Radio } from 'lucide-react';
+import {useEffect} from "react";
+import {KafkaClusterVisualizer} from "./components/KafkaNodeVisualizer.tsx";
+import {useKafkaStream} from "./hooks/useKafkaStream.ts";
 
 function App() {
   const { updates, isConnected } = useNotificationSocket();
+  const { particles, spawnParticle } = useKafkaStream();
+  const { lastMessage } = useNotificationSocket();
+
+  useEffect(() => {
+    // Cuando entra una notificación por WebSocket STOMP
+    if (lastMessage) {
+      spawnParticle(lastMessage);
+    }
+  }, [lastMessage, spawnParticle]);
 
   return (
       <div className="min-h-screen bg-slate-950 text-slate-100 p-8">
@@ -26,6 +38,7 @@ function App() {
           </div>
 
           <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl flex flex-col h-[600px]">
+            <KafkaClusterVisualizer particles={particles} />
             <h2 className="text-xl font-semibold mb-4 text-slate-100 flex items-center gap-2">
               <Activity className="w-5 h-5 text-indigo-400" /> Real-time Consumer Stream
             </h2>
@@ -45,7 +58,7 @@ function App() {
                         <div className="flex items-start gap-3">
                           {update.status === 'SUCCESS' && <CheckCircle2 className="w-5 h-5 text-emerald-400 mt-0.5" />}
                           {update.status === 'FAILED' && <AlertTriangle className="w-5 h-5 text-amber-400 mt-0.5" />}
-                          {update.status === 'FAILED_DLQ' && <XCircle className="w-5 h-5 text-rose-500 mt-0.5" />}
+                          {update.status === 'RETRYING' && <XCircle className="w-5 h-5 text-rose-500 mt-0.5" />}
                           <div>
                             <div className="flex items-center gap-2">
                         <span className="font-mono text-xs px-2 py-0.5 bg-slate-700 rounded text-slate-300">

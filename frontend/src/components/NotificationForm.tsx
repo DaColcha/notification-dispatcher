@@ -6,7 +6,7 @@ const API_URL= 'http://localhost:8081/event';
 
 export const NotificationForm = () => {
     const [channel, setChannel] = useState('DISCORD');
-    const [destination, setDestination] = useState('DEFAULT');
+    const [destination, setDestination] = useState('"da.colcha@gmail.com"');
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -17,7 +17,7 @@ export const NotificationForm = () => {
         const payload : EventPayload = {
             eventId: crypto.randomUUID(),
             eventType: channel,
-            destination: "da.colcha@gmail.com",
+            destination: destination,
             message
         }
 
@@ -38,7 +38,6 @@ export const NotificationForm = () => {
         }
     };
 
-    // Simulación de ráfaga para probar la capacidad de Kafka y los Consumers
     const handleStressTest = async () => {
         setLoading(true);
         const channels = ['EMAIL', 'DISCORD', 'SLACK'];
@@ -52,8 +51,8 @@ export const NotificationForm = () => {
                 body: JSON.stringify({
                     eventId: crypto.randomUUID(),
                     eventType: randomChannel,
-                    destination: "da.colcha@gmail.com",
-                    message: `Mensaje de ráfaga #${i} en batch test`}),
+                    destination: destination,
+                    message: `Mensaje de ráfaga #${i}: ${message}`}),
             });
         }
         setLoading(false);

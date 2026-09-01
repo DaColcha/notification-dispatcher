@@ -7,6 +7,7 @@ import type {NotificationStatusUpdate} from "../types/notification.ts";
 export const useNotificationSocket = () => {
     const [updates, setUpdates] = useState<NotificationStatusUpdate[]>([]);
     const [isConnected, setIsConnected] = useState(false);
+    const [lastMessage, setLastMessage] = useState<NotificationStatusUpdate | null>(null);
 
     useEffect(() => {
         const socket = new SockJS('http://localhost:8085/ws');
@@ -22,7 +23,8 @@ export const useNotificationSocket = () => {
                     console.log(message);
                     if (message.body) {
                         const data: NotificationStatusUpdate = JSON.parse(message.body);
-                        setUpdates((prev) => [data, ...prev.slice(0, 49)]); // Guardar las últimas 50
+                        setLastMessage(data);
+                        setUpdates((prev) => [data, ...prev.slice(0, 49)]);
                     }
                 });
             },
@@ -39,5 +41,5 @@ export const useNotificationSocket = () => {
         };
     }, []);
 
-    return { updates, isConnected };
+    return { updates, lastMessage, isConnected };
 };
