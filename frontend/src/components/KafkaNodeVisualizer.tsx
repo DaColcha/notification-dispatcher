@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {Server, Cpu, AlertTriangle, CheckCircle2} from 'lucide-react';
+import {Server, Cpu} from 'lucide-react';
 import type { Particle, EventType } from '../types/notification.ts';
 
 interface NodeConfig {
@@ -22,13 +22,13 @@ const NODES: NodeConfig[] = [
 
 export const KafkaClusterVisualizer: React.FC<VisualizerProps> = ({ particles }) => {
     return (
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-6 text-white shadow-2xl">
+        <div className="bg-canvas-bg border border-canvas-border rounded-xl p-6 mb-6 text-white shadow-2xl">
             <div className="flex items-center justify-between mb-6">
                 <h3 className="font-mono text-lg font-semibold flex items-center gap-2">
-                    <Server className="w-5 h-5 text-blue-400" />
+                    <Server className="w-5 h-5 text-stomp-glow" />
                     Live Kafka Partition Monitor
                 </h3>
-                <span className="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full font-mono">
+                <span className="text-xs bg-kafka-emerald/10 text-emerald-400 border border-kafka-emerald/20 px-3 py-1 rounded-full font-mono">
           STOMP Connected
         </span>
             </div>
@@ -40,14 +40,14 @@ export const KafkaClusterVisualizer: React.FC<VisualizerProps> = ({ particles })
                     return (
                         <div
                             key={node.id}
-                            className="bg-slate-800/60 border border-slate-700/80 rounded-lg p-4 min-h-[180px] flex flex-col justify-between"
+                            className="bg-canvas-border/60 border border-canvas-subtle/80 rounded-lg p-4 min-h-[180px] flex flex-col justify-between"
                         >
                             <div>
                                 <div className="flex items-center justify-between mb-2">
-                                    <span className="font-mono text-sm text-slate-300 font-bold">{node.name}</span>
-                                    <Cpu className="w-4 h-4 text-slate-500" />
+                                    <span className="font-mono text-sm text-canvas-text-muted font-bold">{node.name}</span>
+                                    <Cpu className="w-4 h-4 text-canvas-text-dark" />
                                 </div>
-                                <span className="text-xs font-mono text-slate-500 block mb-4">{node.topic}</span>
+                                <span className="text-xs font-mono text-canvas-text-dark block mb-4">{node.topic}</span>
                             </div>
 
                             <div className="grid grid-rows-3 gap-3">
@@ -59,14 +59,14 @@ export const KafkaClusterVisualizer: React.FC<VisualizerProps> = ({ particles })
                                     return (
                                         <div
                                             key={partitionIdx}
-                                            className="relative h-13 bg-slate-900/80 border border-emerald-500/30 rounded-lg flex items-center justify-between px-3 overflow-hidden"
+                                            className="relative h-13 bg-canvas-bg/80 border border-kafka-emerald/30 rounded-lg flex items-center justify-between px-3 overflow-hidden"
                                         >
                                           <span className="text-[11px] font-mono text-emerald-400 font-semibold z-10">
                                             P-{partitionIdx}
                                           </span>
 
                                             {partitionParticles.length > 0 && (
-                                                <div className="absolute inset-0 bg-emerald-500/20 animate-pulse" />
+                                                <div className="absolute inset-0 bg-kafka-emerald/20 animate-pulse" />
                                             )}
 
                                             <AnimatePresence>

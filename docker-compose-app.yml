@@ -1,0 +1,12 @@
+name: notification-dispatcher
+services:
+  event-producer:
+
+  email-comsumer:
+
+
+  discord-consumer:
+
+
+  slack-consumer:
+
